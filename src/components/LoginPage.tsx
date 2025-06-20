@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Eye, EyeOff, Building2 } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Building2, AlertCircle } from 'lucide-react';
+import { useAuth } from './AuthWrapper';
 
 interface LoginPageProps {
   language: 'th' | 'en';
@@ -19,7 +20,8 @@ const content = {
     signUp: 'สมัครสมาชิก',
     emailPlaceholder: 'กรอกอีเมลของคุณ',
     passwordPlaceholder: 'กรอกรหัสผ่านของคุณ',
-    back: 'กลับ'
+    back: 'กลับ',
+    signingIn: 'กำลังเข้าสู่ระบบ...'
   },
   en: {
     title: 'Sign In',
@@ -32,27 +34,34 @@ const content = {
     signUp: 'Sign up',
     emailPlaceholder: 'Enter your email',
     passwordPlaceholder: 'Enter your password',
-    back: 'Back'
+    back: 'Back',
+    signingIn: 'Signing in...'
   }
 };
 
 const LoginPage: React.FC<LoginPageProps> = ({ language, onBack, onLoginSuccess }) => {
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const currentContent = content[language];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
     
-    // Simulate login process
-    setTimeout(() => {
+    const result = await signIn(email, password);
+    
+    if (result.error) {
+      setError(result.error);
       setIsLoading(false);
+    } else {
       onLoginSuccess();
-    }, 1500);
+    }
   };
 
   return (
@@ -86,6 +95,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ language, onBack, onLoginSuccess 
               {currentContent.subtitle}
             </p>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+              <span className="text-red-700 text-sm">{error}</span>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -149,7 +166,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ language, onBack, onLoginSuccess 
               {isLoading ? (
                 <div className="flex items-center justify-center space-x-2">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Loading...</span>
+                  <span>{currentContent.signingIn}</span>
                 </div>
               ) : (
                 currentContent.loginButton

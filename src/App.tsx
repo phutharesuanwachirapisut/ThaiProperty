@@ -9,6 +9,8 @@ import {
   Crown,
   Map,
   Brain,
+  User,
+  LogOut,
 } from 'lucide-react';
 import PredictionPage from './components/PredictionPage';
 import ComparisonPage from './components/ComparisonPage';
@@ -17,9 +19,9 @@ import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
 import PropertyValuationPage from './components/PropertyValuationPage';
 import PriceForecastingPage from './components/PriceForecastingPage';
-
-//comment
-//dd
+import SubscriptionPage from './components/SubscriptionPage';
+import SubscriptionSuccessPage from './components/SubscriptionSuccessPage';
+import { AuthProvider, useAuth } from './components/AuthWrapper';
 
 interface Content {
   nav: {
@@ -132,7 +134,8 @@ const content: Record<'th' | 'en', Content> = {
   },
 };
 
-function App() {
+function AppContent() {
+  const { user, loading, signOut } = useAuth();
   const [language, setLanguage] = useState<'th' | 'en'>('en');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<
@@ -144,8 +147,9 @@ function App() {
     | 'register'
     | 'valuation'
     | 'forecasting'
+    | 'subscription'
+    | 'subscription-success'
   >('home');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const currentContent = content[language];
 
@@ -172,13 +176,42 @@ function App() {
     setCurrentPage('home');
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    setCurrentPage('home');
+    setMobileMenuOpen(false);
+  };
+
+  // Handle URL-based routing for subscription success
+  React.useEffect(() => {
+    const path = window.location.pathname;
+    if (path === '/subscription-success') {
+      setCurrentPage('subscription-success');
+    } else if (path === '/subscription') {
+      setCurrentPage('subscription');
+    }
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-white to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center mx-auto mb-4">
+            <Building2 className="w-7 h-7 text-white" />
+          </div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (currentPage === 'prediction') {
-    if (!isAuthenticated) {
+    if (!user) {
       return (
         <LoginPage
           language={language}
           onBack={handleBackToHome}
-          onLoginSuccess={() => setIsAuthenticated(true)}
+          onLoginSuccess={() => setCurrentPage('prediction')}
         />
       );
     }
@@ -186,12 +219,12 @@ function App() {
   }
 
   if (currentPage === 'comparison') {
-    if (!isAuthenticated) {
+    if (!user) {
       return (
         <LoginPage
           language={language}
           onBack={handleBackToHome}
-          onLoginSuccess={() => setIsAuthenticated(true)}
+          onLoginSuccess={() => setCurrentPage('comparison')}
         />
       );
     }
@@ -199,12 +232,12 @@ function App() {
   }
 
   if (currentPage === 'trends') {
-    if (!isAuthenticated) {
+    if (!user) {
       return (
         <LoginPage
           language={language}
           onBack={handleBackToHome}
-          onLoginSuccess={() => setIsAuthenticated(true)}
+          onLoginSuccess={() => setCurrentPage('trends')}
         />
       );
     }
@@ -212,12 +245,12 @@ function App() {
   }
 
   if (currentPage === 'valuation') {
-    if (!isAuthenticated) {
+    if (!user) {
       return (
         <LoginPage
           language={language}
           onBack={handleBackToHome}
-          onLoginSuccess={() => setIsAuthenticated(true)}
+          onLoginSuccess={() => setCurrentPage('valuation')}
         />
       );
     }
@@ -227,12 +260,12 @@ function App() {
   }
 
   if (currentPage === 'forecasting') {
-    if (!isAuthenticated) {
+    if (!user) {
       return (
         <LoginPage
           language={language}
           onBack={handleBackToHome}
-          onLoginSuccess={() => setIsAuthenticated(true)}
+          onLoginSuccess={() => setCurrentPage('forecasting')}
         />
       );
     }
@@ -241,12 +274,40 @@ function App() {
     );
   }
 
+  if (currentPage === 'subscription') {
+    if (!user) {
+      return (
+        <LoginPage
+          language={language}
+          onBack={handleBackToHome}
+          onLoginSuccess={() => setCurrentPage('subscription')}
+        />
+      );
+    }
+    return (
+      <SubscriptionPage
+        language={language}
+        onBack={handleBackToHome}
+        user={user}
+      />
+    );
+  }
+
+  if (currentPage === 'subscription-success') {
+    return (
+      <SubscriptionSuccessPage
+        language={language}
+        onBack={handleBackToHome}
+      />
+    );
+  }
+
   if (currentPage === 'login') {
     return (
       <LoginPage
         language={language}
         onBack={handleBackToHome}
-        onLoginSuccess={() => setIsAuthenticated(true)}
+        onLoginSuccess={() => setCurrentPage('home')}
       />
     );
   }
@@ -305,19 +366,44 @@ function App() {
                   TH
                 </button>
 
-                {/* Login/Register */}
-                <button
-                  onClick={() => setCurrentPage('login')}
-                  className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-200 hover:bg-gray-300 transition"
-                >
-                  Login
-                </button>
-                <button
-                  onClick={() => setCurrentPage('register')}
-                  className="px-4 py-2 rounded-lg text-sm font-medium bg-black text-white hover:bg-gray-800 transition"
-                >
-                  Register
-                </button>
+                {/* Auth Buttons */}
+                {user ? (
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => setCurrentPage('subscription')}
+                      className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-yellow-400 to-orange-500 text-white hover:from-yellow-500 hover:to-orange-600 transition"
+                    >
+                      <Crown className="w-4 h-4" />
+                      <span>Premium</span>
+                    </button>
+                    <div className="flex items-center space-x-2 text-gray-700">
+                      <User className="w-4 h-4" />
+                      <span className="text-sm">{user.email}</span>
+                    </div>
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setCurrentPage('login')}
+                      className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-200 hover:bg-gray-300 transition"
+                    >
+                      Login
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage('register')}
+                      className="px-4 py-2 rounded-lg text-sm font-medium bg-black text-white hover:bg-gray-800 transition"
+                    >
+                      Register
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* Mobile Menu Button */}
@@ -361,26 +447,56 @@ function App() {
                   </button>
                 </div>
 
-                {/* Login/Register Buttons - Mobile */}
+                {/* Mobile Auth Buttons */}
                 <div className="mt-4 flex flex-col space-y-2">
-                  <button
-                    onClick={() => {
-                      setCurrentPage('login');
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-200 rounded"
-                  >
-                    Login
-                  </button>
-                  <button
-                    onClick={() => {
-                      setCurrentPage('register');
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-200 rounded"
-                  >
-                    Register
-                  </button>
+                  {user ? (
+                    <>
+                      <div className="px-4 py-2 text-gray-700 border-b">
+                        <div className="flex items-center space-x-2">
+                          <User className="w-4 h-4" />
+                          <span className="text-sm">{user.email}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setCurrentPage('subscription');
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-200 rounded flex items-center space-x-2"
+                      >
+                        <Crown className="w-4 h-4" />
+                        <span>Premium</span>
+                      </button>
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-200 rounded flex items-center space-x-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Sign Out</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          setCurrentPage('login');
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-200 rounded"
+                      >
+                        Login
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCurrentPage('register');
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-200 rounded"
+                      >
+                        Register
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -490,6 +606,14 @@ function App() {
         </footer>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

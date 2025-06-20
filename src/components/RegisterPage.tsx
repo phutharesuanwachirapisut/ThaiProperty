@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Eye, EyeOff, Building2 } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Building2, AlertCircle, CheckCircle } from 'lucide-react';
+import { useAuth } from './AuthWrapper';
 
 interface RegisterPageProps {
   language: 'th' | 'en';
@@ -27,7 +28,11 @@ const content = {
     terms: 'ฉันยอมรับ',
     termsLink: 'ข้อกำหนดและเงื่อนไข',
     and: 'และ',
-    privacyLink: 'นโยบายความเป็นส่วนตัว'
+    privacyLink: 'นโยบายความเป็นส่วนตัว',
+    registering: 'กำลังสมัครสมาชิก...',
+    success: 'สมัครสมาชิกสำเร็จ!',
+    successMessage: 'บัญชีของคุณถูกสร้างเรียบร้อยแล้ว',
+    passwordMismatch: 'รหัสผ่านไม่ตรงกัน'
   },
   en: {
     title: 'Sign Up',
@@ -49,11 +54,16 @@ const content = {
     terms: 'I agree to the',
     termsLink: 'Terms and Conditions',
     and: 'and',
-    privacyLink: 'Privacy Policy'
+    privacyLink: 'Privacy Policy',
+    registering: 'Creating account...',
+    success: 'Registration Successful!',
+    successMessage: 'Your account has been created successfully',
+    passwordMismatch: 'Passwords do not match'
   }
 };
 
 const RegisterPage: React.FC<RegisterPageProps> = ({ language, onBack }) => {
+  const { signUp } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -65,25 +75,69 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ language, onBack }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   const currentContent = content[language];
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    setError(''); // Clear error when user types
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!acceptTerms) return;
     
-    setIsLoading(true);
+    if (formData.password !== formData.confirmPassword) {
+      setError(currentContent.passwordMismatch);
+      return;
+    }
     
-    // Simulate registration process
-    setTimeout(() => {
+    setIsLoading(true);
+    setError('');
+    
+    const result = await signUp(formData.email, formData.password, formData.firstName, formData.lastName);
+    
+    if (result.error) {
+      setError(result.error);
       setIsLoading(false);
-      onBack(); // Go back to home after successful registration
-    }, 2000);
+    } else {
+      setSuccess(true);
+      setIsLoading(false);
+      // Auto redirect after 2 seconds
+      setTimeout(() => {
+        onBack();
+      }, 2000);
+    }
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              {currentContent.success}
+            </h1>
+            <p className="text-gray-600 mb-6">
+              {currentContent.successMessage}
+            </p>
+            <div className="flex justify-center">
+              <div className="animate-pulse flex space-x-1">
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
@@ -116,6 +170,14 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ language, onBack }) => {
               {currentContent.subtitle}
             </p>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+              <span className="text-red-700 text-sm">{error}</span>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -248,7 +310,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ language, onBack }) => {
               {isLoading ? (
                 <div className="flex items-center justify-center space-x-2">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Creating Account...</span>
+                  <span>{currentContent.registering}</span>
                 </div>
               ) : (
                 currentContent.registerButton
