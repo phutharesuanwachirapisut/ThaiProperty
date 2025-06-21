@@ -9,12 +9,20 @@ export interface StripeProduct {
 
 export const stripeProducts: StripeProduct[] = [
   {
-    priceId: 'price_1RbzIbR9EITXQuWq5DD9w8PW',
-    name: 'ThaiProperty',
-    description: 'Access to premium Thai property AI features and analytics',
+    priceId: 'price_1RbzptR9EITXQuWquMT0xaaA',
+    name: 'Pro Plan',
+    description: 'Advanced AI property analysis with comprehensive market insights and forecasting tools',
     mode: 'subscription',
-    price: 'Free',
-    currency: 'THB'
+    price: '$10.00/month',
+    currency: 'USD'
+  },
+  {
+    priceId: 'price_1RbzfRR9EITXQuWqN5upVF2o',
+    name: 'Premium Plan',
+    description: 'Complete property intelligence suite with unlimited access to all premium features',
+    mode: 'subscription',
+    price: '$20.00/month',
+    currency: 'USD'
   }
 ];
 

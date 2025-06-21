@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Crown, Check, Loader2, CreditCard, Calendar } from 'lucide-react';
+import { ArrowLeft, Crown, Check, Loader2, CreditCard, Calendar, Star, Zap } from 'lucide-react';
 import { stripeProducts, type StripeProduct } from '../stripe-config';
 
 interface SubscriptionPageProps {
@@ -28,6 +28,8 @@ const content = {
     noSubscription: 'ยังไม่มีการสมัครสมาชิก',
     renewsOn: 'ต่ออายุในวันที่',
     canceledOn: 'ยกเลิกในวันที่',
+    mostPopular: 'ยอดนิยม',
+    upgrade: 'อัพเกรด',
     status: {
       active: 'ใช้งานอยู่',
       canceled: 'ยกเลิกแล้ว',
@@ -35,7 +37,22 @@ const content = {
       incomplete: 'ไม่สมบูรณ์',
       trialing: 'ทดลองใช้',
       not_started: 'ยังไม่เริ่ม'
-    }
+    },
+    proFeatures: [
+      'การทำนายราคาด้วย AI ขั้นสูง',
+      'การวิเคราะห์แนวโน้มตลาด',
+      'การเปรียบเทียบอสังหาริมทรัพย์',
+      'การพยากรณ์ราคาในอนาคต',
+      'รายงานตลาดรายเดือน'
+    ],
+    premiumFeatures: [
+      'คุณสมบัติทั้งหมดของ Pro Plan',
+      'การประเมินมูลค่าทรัพย์สินแบบละเอียด',
+      'การวิเคราะห์ ROI และความเสี่ยง',
+      'การแจ้งเตือนโอกาสการลงทุน',
+      'การสนับสนุนลูกค้าแบบ VIP',
+      'รายงานการวิเคราะห์แบบกำหนดเอง'
+    ]
   },
   en: {
     title: 'Subscription Plans',
@@ -49,6 +66,8 @@ const content = {
     noSubscription: 'No active subscription',
     renewsOn: 'Renews on',
     canceledOn: 'Canceled on',
+    mostPopular: 'Most Popular',
+    upgrade: 'Upgrade',
     status: {
       active: 'Active',
       canceled: 'Canceled',
@@ -56,7 +75,22 @@ const content = {
       incomplete: 'Incomplete',
       trialing: 'Trialing',
       not_started: 'Not Started'
-    }
+    },
+    proFeatures: [
+      'Advanced AI Price Prediction',
+      'Market Trends Analysis',
+      'Property Comparison',
+      'Future Price Forecasting',
+      'Monthly Market Reports'
+    ],
+    premiumFeatures: [
+      'All Pro Plan Features',
+      'Detailed Property Valuation',
+      'ROI & Risk Analysis',
+      'Investment Opportunity Alerts',
+      'VIP Customer Support',
+      'Custom Analytics Reports'
+    ]
   }
 };
 
@@ -139,6 +173,15 @@ const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ language, onBack, u
     return subscription?.price_id === priceId && subscription?.subscription_status === 'active';
   };
 
+  const getFeatures = (productName: string) => {
+    if (productName === 'Pro Plan') {
+      return currentContent.proFeatures;
+    } else if (productName === 'Premium Plan') {
+      return currentContent.premiumFeatures;
+    }
+    return [];
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
@@ -152,7 +195,7 @@ const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ language, onBack, u
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center space-x-4 mb-8">
           <button
@@ -208,23 +251,38 @@ const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ language, onBack, u
           )}
 
           {/* Subscription Plans */}
-          <div className="grid md:grid-cols-1 gap-6">
-            {stripeProducts.filter(p => p.mode === 'subscription').map((product) => (
+          <div className="grid md:grid-cols-2 gap-6">
+            {stripeProducts.filter(p => p.mode === 'subscription').map((product, index) => (
               <div
                 key={product.priceId}
-                className={`border-2 rounded-xl p-6 transition-all ${
+                className={`relative border-2 rounded-xl p-6 transition-all ${
                   isCurrentPlan(product.priceId)
                     ? 'border-green-500 bg-green-50'
+                    : product.name === 'Premium Plan'
+                    ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
+                {/* Most Popular Badge */}
+                {product.name === 'Premium Plan' && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <div className="bg-gradient-to-r from-purple-500 to-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold flex items-center space-x-1">
+                      <Star className="w-4 h-4" />
+                      <span>{currentContent.mostPopular}</span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900">{product.name}</h3>
+                    <h3 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
+                      <span>{product.name}</span>
+                      {product.name === 'Premium Plan' && <Crown className="w-5 h-5 text-yellow-500" />}
+                    </h3>
                     <p className="text-gray-600">{product.description}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-gray-900">{product.price || 'Free'}</p>
+                    <p className="text-2xl font-bold text-gray-900">{product.price}</p>
                     {product.currency && (
                       <p className="text-sm text-gray-600">{product.currency}</p>
                     )}
@@ -234,35 +292,23 @@ const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ language, onBack, u
                 <div className="mb-6">
                   <h4 className="font-semibold text-gray-900 mb-3">{currentContent.features}:</h4>
                   <ul className="space-y-2">
-                    <li className="flex items-center space-x-2">
-                      <Check className="w-4 h-4 text-green-500" />
-                      <span className="text-gray-700">AI Price Prediction</span>
-                    </li>
-                    <li className="flex items-center space-x-2">
-                      <Check className="w-4 h-4 text-green-500" />
-                      <span className="text-gray-700">Market Trends Analysis</span>
-                    </li>
-                    <li className="flex items-center space-x-2">
-                      <Check className="w-4 h-4 text-green-500" />
-                      <span className="text-gray-700">Property Comparison</span>
-                    </li>
-                    <li className="flex items-center space-x-2">
-                      <Check className="w-4 h-4 text-green-500" />
-                      <span className="text-gray-700">Advanced Forecasting</span>
-                    </li>
-                    <li className="flex items-center space-x-2">
-                      <Check className="w-4 h-4 text-green-500" />
-                      <span className="text-gray-700">Property Valuation</span>
-                    </li>
+                    {getFeatures(product.name).map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-center space-x-2">
+                        <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                        <span className="text-gray-700 text-sm">{feature}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
                 <button
                   onClick={() => handleSubscribe(product)}
                   disabled={isCurrentPlan(product.priceId) || processingPriceId === product.priceId}
-                  className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
+                  className={`w-full py-3 px-4 rounded-lg font-semibold transition-all ${
                     isCurrentPlan(product.priceId)
                       ? 'bg-green-500 text-white cursor-not-allowed'
+                      : product.name === 'Premium Plan'
+                      ? 'bg-gradient-to-r from-purple-500 to-blue-600 text-white hover:from-purple-600 hover:to-blue-700'
                       : 'bg-black text-white hover:bg-gray-800'
                   } disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2`}
                 >
@@ -277,7 +323,10 @@ const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ language, onBack, u
                       <span>{currentContent.currentPlan}</span>
                     </>
                   ) : (
-                    <span>{currentContent.subscribe}</span>
+                    <>
+                      {product.name === 'Premium Plan' && <Zap className="w-5 h-5" />}
+                      <span>{currentContent.subscribe}</span>
+                    </>
                   )}
                 </button>
               </div>

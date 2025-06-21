@@ -22,6 +22,7 @@ import PriceForecastingPage from './components/PriceForecastingPage';
 import SubscriptionPage from './components/SubscriptionPage';
 import SubscriptionSuccessPage from './components/SubscriptionSuccessPage';
 import { AuthProvider, useAuth } from './components/AuthWrapper';
+import { getProductByPriceId } from './stripe-config';
 
 interface Content {
   nav: {
@@ -150,8 +151,43 @@ function AppContent() {
     | 'subscription'
     | 'subscription-success'
   >('home');
+  const [userSubscription, setUserSubscription] = useState<any>(null);
 
   const currentContent = content[language];
+
+  // Fetch user subscription when user is available
+  React.useEffect(() => {
+    if (user) {
+      fetchUserSubscription();
+    }
+  }, [user]);
+
+  const fetchUserSubscription = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/stripe_user_subscriptions`, {
+        headers: {
+          'Authorization': `Bearer ${user.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          setUserSubscription(data[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+    }
+  };
+
+  const getCurrentPlanName = () => {
+    if (!userSubscription?.price_id) return null;
+    const product = getProductByPriceId(userSubscription.price_id);
+    return product?.name || null;
+  };
 
   const toggleLanguage = (lang: 'th' | 'en') => {
     setLanguage(lang);
@@ -180,6 +216,7 @@ function AppContent() {
     await signOut();
     setCurrentPage('home');
     setMobileMenuOpen(false);
+    setUserSubscription(null);
   };
 
   // Handle URL-based routing for subscription success
@@ -374,7 +411,7 @@ function AppContent() {
                       className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-yellow-400 to-orange-500 text-white hover:from-yellow-500 hover:to-orange-600 transition"
                     >
                       <Crown className="w-4 h-4" />
-                      <span>Premium</span>
+                      <span>{getCurrentPlanName() || 'Premium'}</span>
                     </button>
                     <div className="flex items-center space-x-2 text-gray-700">
                       <User className="w-4 h-4" />
@@ -456,6 +493,12 @@ function AppContent() {
                           <User className="w-4 h-4" />
                           <span className="text-sm">{user.email}</span>
                         </div>
+                        {getCurrentPlanName() && (
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Crown className="w-4 h-4 text-yellow-500" />
+                            <span className="text-sm text-gray-600">{getCurrentPlanName()}</span>
+                          </div>
+                        )}
                       </div>
                       <button
                         onClick={() => {
