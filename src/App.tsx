@@ -11,16 +11,18 @@ import {
   Brain,
   User,
   LogOut,
+  MessageCircle,
 } from 'lucide-react';
 import PredictionPage from './components/PredictionPage';
 import ComparisonPage from './components/ComparisonPage';
 import MarketTrendsForm from './components/MarketTrendsForm';
 import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
-import PropertyValuationPage from './components/PropertyValuationPage';
 import PriceForecastingPage from './components/PriceForecastingPage';
 import SubscriptionPage from './components/SubscriptionPage';
 import SubscriptionSuccessPage from './components/SubscriptionSuccessPage';
+import ChatbotConsultant from './components/ChatbotConsultant';
+import MapPage from './components/MapPage';
 import { AuthProvider, useAuth } from './components/AuthWrapper';
 import { getProductByPriceId } from './stripe-config';
 
@@ -39,12 +41,11 @@ interface Content {
     text: string;
     icon: React.ComponentType<any>;
   }>;
-  features: {
+  chatbot: {
     title: string;
-    items: Array<{
-      title: string;
-      description: string;
-    }>;
+    subtitle: string;
+    description: string;
+    ctaButton: string;
   };
 }
 
@@ -65,30 +66,14 @@ const content: Record<'th' | 'en', Content> = {
       { id: 'forecasting', text: 'พยากรณ์ราคา AI', icon: Brain },
       { id: 'trends', text: 'ดูแนวโน้มตลาด', icon: BarChart3 },
       { id: 'compare', text: 'เปรียบเทียบ', icon: Globe },
-      { id: 'valuation', text: 'ประเมินมูลค่าทรัพย์สิน', icon: Crown },
       { id: 'map', text: 'แผนที่', icon: Map },
+      { id: 'chatbot', text: 'ที่ปรึกษา AI', icon: MessageCircle },
     ],
-    features: {
-      title: 'ทำไมต้องเลือก ThaiPropertyAI',
-      items: [
-        {
-          title: 'AI ขั้นสูง',
-          description:
-            'ใช้เทคโนโลยี Machine Learning ที่ทันสมัยในการวิเคราะห์ตลาด',
-        },
-        {
-          title: 'ข้อมูลครอบคลุม',
-          description: 'วิเคราะห์จากข้อมูลอสังหาริมทรัพย์ทั่วประเทศไทย',
-        },
-        {
-          title: 'ผลลัพธ์แม่นยำ',
-          description: 'ความแม่นยำสูงจากการเรียนรู้ข้อมูลตลาดจริง',
-        },
-        {
-          title: 'พยากรณ์อนาคต',
-          description: 'ทำนายแนวโน้มราคาในอนาคตด้วยโมเดล AI ที่ซับซ้อน',
-        },
-      ],
+    chatbot: {
+      title: 'ที่ปรึกษาอสังหาริมทรัพย์ AI',
+      subtitle: 'รับคำปรึกษาจากผู้เชี่ยวชาญ AI ตลอด 24 ชั่วโมง',
+      description: 'สอบถามเกี่ยวกับตลาดอสังหาริมทรัพย์ การลงทุน และรับคำแนะนำเฉพาะบุคคลจาก AI ที่ฉลาดของเรา',
+      ctaButton: 'เริ่มสนทนา',
     },
   },
   en: {
@@ -107,30 +92,14 @@ const content: Record<'th' | 'en', Content> = {
       { id: 'forecasting', text: 'AI Price Forecasting', icon: Brain },
       { id: 'trends', text: 'View Market Trends', icon: BarChart3 },
       { id: 'compare', text: 'Compare', icon: Globe },
-      { id: 'valuation', text: 'Property Valuation', icon: Crown },
       { id: 'map', text: 'Map', icon: Map },
+      { id: 'chatbot', text: 'AI Consultant', icon: MessageCircle },
     ],
-    features: {
-      title: 'Why Choose ThaiPropertyAI',
-      items: [
-        {
-          title: 'Advanced AI',
-          description:
-            'Utilizing cutting-edge machine learning technology for market analysis',
-        },
-        {
-          title: 'Comprehensive Data',
-          description: 'Analysis based on property data from across Thailand',
-        },
-        {
-          title: 'Accurate Results',
-          description: 'High precision through real market data learning',
-        },
-        {
-          title: 'Future Forecasting',
-          description: 'Predict future price trends with sophisticated AI models',
-        },
-      ],
+    chatbot: {
+      title: 'AI Property Consultant',
+      subtitle: 'Get expert advice from our AI consultant 24/7',
+      description: 'Ask questions about the property market, investments, and get personalized recommendations from our intelligent AI assistant.',
+      ctaButton: 'Start Conversation',
     },
   },
 };
@@ -146,10 +115,11 @@ function AppContent() {
     | 'trends'
     | 'login'
     | 'register'
-    | 'valuation'
     | 'forecasting'
     | 'subscription'
     | 'subscription-success'
+    | 'chatbot'
+    | 'map'
   >('home');
   const [userSubscription, setUserSubscription] = useState<any>(null);
 
@@ -201,10 +171,12 @@ function AppContent() {
       setCurrentPage('comparison');
     } else if (buttonId === 'trends') {
       setCurrentPage('trends');
-    } else if (buttonId === 'valuation') {
-      setCurrentPage('valuation');
     } else if (buttonId === 'forecasting') {
       setCurrentPage('forecasting');
+    } else if (buttonId === 'chatbot') {
+      setCurrentPage('chatbot');
+    } else if (buttonId === 'map') {
+      setCurrentPage('map');
     }
   };
 
@@ -281,21 +253,6 @@ function AppContent() {
     return <MarketTrendsForm language={language} onBack={handleBackToHome} />;
   }
 
-  if (currentPage === 'valuation') {
-    if (!user) {
-      return (
-        <LoginPage
-          language={language}
-          onBack={handleBackToHome}
-          onLoginSuccess={() => setCurrentPage('valuation')}
-        />
-      );
-    }
-    return (
-      <PropertyValuationPage language={language} onBack={handleBackToHome} />
-    );
-  }
-
   if (currentPage === 'forecasting') {
     if (!user) {
       return (
@@ -309,6 +266,32 @@ function AppContent() {
     return (
       <PriceForecastingPage language={language} onBack={handleBackToHome} />
     );
+  }
+
+  if (currentPage === 'chatbot') {
+    if (!user) {
+      return (
+        <LoginPage
+          language={language}
+          onBack={handleBackToHome}
+          onLoginSuccess={() => setCurrentPage('chatbot')}
+        />
+      );
+    }
+    return <ChatbotConsultant language={language} onBack={handleBackToHome} />;
+  }
+
+  if (currentPage === 'map') {
+    if (!user) {
+      return (
+        <LoginPage
+          language={language}
+          onBack={handleBackToHome}
+          onLoginSuccess={() => setCurrentPage('map')}
+        />
+      );
+    }
+    return <MapPage language={language} onBack={handleBackToHome} />;
   }
 
   if (currentPage === 'subscription') {
@@ -415,7 +398,15 @@ function AppContent() {
                     </button>
                     <div className="flex items-center space-x-2 text-gray-700">
                       <User className="w-4 h-4" />
-                      <span className="text-sm">{user.email}</span>
+                      <div className="text-right">
+                        <div className="text-sm">{user.email}</div>
+                        {getCurrentPlanName() && (
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Crown className="w-4 h-4 text-yellow-500" />
+                            <span className="text-sm text-gray-600">{getCurrentPlanName()}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <button
                       onClick={handleSignOut}
@@ -493,12 +484,6 @@ function AppContent() {
                           <User className="w-4 h-4" />
                           <span className="text-sm">{user.email}</span>
                         </div>
-                        {getCurrentPlanName() && (
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Crown className="w-4 h-4 text-yellow-500" />
-                            <span className="text-sm text-gray-600">{getCurrentPlanName()}</span>
-                          </div>
-                        )}
                       </div>
                       <button
                         onClick={() => {
@@ -598,33 +583,33 @@ function AppContent() {
             </div>
           </div>
 
-          {/* Features Section */}
+          {/* AI Chatbot Consultant Section */}
           <div className="mt-24">
-            <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">
-              {currentContent.features.title}
-            </h2>
-
-            <div className="grid md:grid-cols-4 gap-8 max-w-6xl mx-auto">
-              {currentContent.features.items.map((feature, index) => (
-                <div
-                  key={index}
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 border border-white/20"
-                >
-                  <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center mb-6 mx-auto">
-                    {index === 3 ? (
-                      <Brain className="w-6 h-6 text-white" />
-                    ) : (
-                      <Globe className="w-6 h-6 text-white" />
-                    )}
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600 text-center leading-relaxed">
-                    {feature.description}
-                  </p>
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-8 md:p-12 shadow-xl border border-blue-100">
+              <div className="max-w-4xl mx-auto text-center">
+                <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <MessageCircle className="w-10 h-10 text-white" />
                 </div>
-              ))}
+                
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                  {currentContent.chatbot.title}
+                </h2>
+                
+                <p className="text-xl text-gray-600 mb-6">
+                  {currentContent.chatbot.subtitle}
+                </p>
+                
+                <p className="text-lg text-gray-700 mb-8 leading-relaxed max-w-3xl mx-auto">
+                  {currentContent.chatbot.description}
+                </p>
+                
+                <button
+                  onClick={() => handleNavigationClick('chatbot')}
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 hover:from-blue-600 hover:to-purple-700"
+                >
+                  {currentContent.chatbot.ctaButton}
+                </button>
+              </div>
             </div>
           </div>
         </main>
